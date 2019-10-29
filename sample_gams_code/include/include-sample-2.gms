@@ -1,12 +1,12 @@
 * gams-master-file: gams-sample.gms
 $ontext
-Time-stamp: 	<2010-07-24 01:06:53 >
-First-written:	<2010/06/28>
+Time-stamp:     <2019-10-29 00:02:59 st>
+First-written:  <2010/06/28>
 $offtext
 
 parameter
-    m		Sample paramter m
-    n		Sample paramter n
+    m           Sample paramter m
+    n           Sample paramter n
 ;
 
 m = 10;

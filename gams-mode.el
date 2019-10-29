@@ -4,7 +4,7 @@
 ;; Maintainer: Shiro Takeda
 ;; Copyright (C) 2001-2018 Shiro Takeda
 ;; First Created: Sun Aug 19, 2001 12:48 PM
-;; Time-stamp: <2019-05-05 18:08:43 st>
+;; Time-stamp: <2019-10-29 00:05:06 st>
 ;; Version: 6.6
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: languages, tools, GAMS
@@ -8617,14 +8617,31 @@ MBUF is master file buffer."
   (let ((buf (get-file-buffer file)))
     (cond (buf
            ;; We have it already as a buffer - just return it
+
+           (message "Starting GAMS-SIL mode (xxx) - [%s]"
+                    (current-time-string))
+
            buf)
           ((file-readable-p file)
            ;; At least there is such a file and we can read it.
 
+           (message "Starting GAMS-SIL mode (ooo) - [%s] - [%s]"
+                    file
+                    (current-time-string))
+           
+           (cl-letf ((format-alist nil)
+                     ((default-value 'major-mode) 'fundamental-mode)
+                     (enable-local-variables nil)
+                     (font-lock-mode nil)
+                     (after-insert-file-functions nil))
+             (setq buf (find-file-noselect file t)))
+
            ;; Visit the file with full magic
-           (setq buf (find-file-noselect file))
+           ;; (setq buf (find-file-noselect file t))
+           ;; (setq buf (find-file-noselect file))
            ;; Else: Visit the file just briefly, without or
            ;;       with limited Magic
+
            )
           ;; Lets see if we got a license to kill :-|
 
@@ -9392,7 +9409,9 @@ LIGHT is t if in light mode.
         (case-fold-search t)
         (co 0)
         mfile mdir cbuf fnum next-fnum nfile-temp next-file mkr
-        next-buf po-beg po-end type match-decl flist)
+        next-buf po-beg po-end type match-decl flist
+        sss1 sss2 sss3
+        )
     (catch 'found
       (save-excursion
         (setq mfile (buffer-file-name mbuf) ; Master file buffer
@@ -9406,7 +9425,8 @@ LIGHT is t if in light mode.
           (if (re-search-forward regexp nil t)
               (progn
                 (setq co (1+ co))
-                (message "Starting GAMS-SIL mode %s" (gams-sil-counter co))
+                ;; (message "Starting GAMS-SIL mode %s" (gams-sil-counter co))
+                ;; (message "Starting GAMS-SIL mode %s" (int-to-string co))
                 
                 (cond
                  ;; $ontext-$offtext pair.
@@ -9420,6 +9440,7 @@ LIGHT is t if in light mode.
 
                  ;; (bat)include or gams-include-file:
                  ((match-beginning 2)
+
                   (let (beg end ele dol inc-p)
                     (setq beg (1+ (match-beginning 0)) ; 1+ for marker
                           end (1+ beg))
@@ -9444,7 +9465,7 @@ LIGHT is t if in light mode.
                             (if inc-p
                                 (setq ele (gams-sil-get-alist-fil fnum dol beg))
                               (setq ele (gams-sil-get-alist-fil-alt fnum beg)))
-                              
+                            
                             (setq mkr (nth 5 ele))
                             (push ele idstruct)
                             
@@ -9454,14 +9475,33 @@ LIGHT is t if in light mode.
                             (when (and (setq next-file (gams-sil-get-filename nfile-temp mdir))
                                        (not (member next-file flist)))
                               (setq flist (cons next-file flist))
+
+                              (message "Starting GAMS-SIL mode (1) - [%s]"
+                                       (current-time-string))
+
                               (set-buffer
-                               ;; switch-to next-buf.
+                              ;; switch-to next-buf.
                                (setq next-buf (gams-sil-get-file-buffer-force next-file)))
+
+;;                               (set-buffer
+;;                                ;; switch-to next-buf.
+;;                                (setq next-buf (get-file-buffer next-file)))
+
+                              (message "Starting GAMS-SIL mode (2) - [%s]"
+                                       (current-time-string))
+                              
                               (if (string-match "gen" (file-name-extension (buffer-file-name)))
                                   (kill-buffer (current-buffer))
+
+                                (message "Starting GAMS-SIL mode (3) - [%s]"
+                                         (current-time-string))
+                              
                                 (when (not (equal mode-name "GAMS"))
                                   (gams-mode))
-                                
+
+                                (message "Starting GAMS-SIL mode (4) - [%s]"
+                                         (current-time-string))
+                  
                                 ;; Switch-to master file buffer.
                                 (set-buffer mbuf)
                                 (if (rassoc next-file gams-file-list)
@@ -9472,7 +9512,15 @@ LIGHT is t if in light mode.
                                              mkr
                                              ) idstruct)
                                 (setq mkr nil)
-                                
+
+                                (setq sss1 (car idstruct))
+                                (setq sss2 (symbol-name (car sss1)))
+                                (setq sss3 "")
+                                (when (equal sss2 "dol")
+                                  (setq sss3 (concat (nth 3 sss1) " " (nth 4 sss1))))
+                                (message "Starting GAMS-SIL mode [%s] - [%s] - [%s] - [%s] - !!!!!"
+                                         (int-to-string co) sss2 sss3 (current-time-string))
+                     
                                 ;; Switch-to the included file buffer.
                                 (set-buffer next-buf)
                                 (setq idstruct (gams-sil-get-identifier-alist idstruct mbuf))
@@ -9480,7 +9528,17 @@ LIGHT is t if in light mode.
                                 (set-buffer cbuf)
                                 (push (list 'eof next-fnum fnum end next-file
                                             (set-marker (make-marker) end)
-                                            ) idstruct)))
+                                            ) idstruct)
+                                
+                                (setq sss1 (car idstruct))
+                                (setq sss2 (symbol-name (car sss1)))
+                                (setq sss3 "")
+                                (when (equal sss2 "dol")
+                                  (setq sss3 (concat (nth 3 sss1) " " (nth 4 sss1))))
+                                (message "Starting GAMS-SIL mode [%s] - [%s] - [%s] - [%s] - #####"
+                                         (int-to-string co) sss2 sss3 (current-time-string))
+                     
+                                ))
                             
                             ;; Back to the current buffer.
                             (set-buffer cbuf)
@@ -9605,7 +9663,12 @@ LIGHT is t if in light mode.
                           (setq idstruct (append (gams-sil-get-alist fnum type) idstruct))
                           (goto-char (point-max)))
                       (widen)))
-                   ))))
+                   )))
+                ;;
+                (setq sss2 (symbol-name (car (car idstruct))))
+                (message "Starting GAMS-SIL mode [%s] - [%s] - [%s]"
+                         (int-to-string co) sss2 (current-time-string))
+                ) ;; progn
             (throw 'found t))) ;; while ends here.
         ))
     idstruct))
